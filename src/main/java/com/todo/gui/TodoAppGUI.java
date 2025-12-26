@@ -31,6 +31,7 @@ public class TodoAppGUI extends JFrame{
         setupLayout();
         loadTodos();
         setVisible(true);
+        setupEventListener();
     }
 
     public void initializeComponents(){
@@ -119,6 +120,67 @@ public class TodoAppGUI extends JFrame{
         JScrollPane tabJScrollPane = new JScrollPane(todoTable);
         add(tabJScrollPane,BorderLayout.CENTER);
     }
+
+
+    private void setupEventListener(){
+        addButton.addActionListener(
+            (e) -> {
+                addTodo();
+            });
+        
+        updateButton.addActionListener(
+            (e) -> {
+                updateTodo();
+            });
+        
+        refreshButton.addActionListener(
+            (e) -> {
+                tableModel.setRowCount(0);
+                loadTodos();
+            });
+
+        deleteButton.addActionListener(
+            (e) -> {
+                deleteTodo();
+            });
+    }
+
+    private void addTodo(){
+        String title = titleField.getText().trim();
+        String description = descriptionArea.getText().trim();
+        boolean isCompleted = completedCheckBox.isSelected();
+
+        if(title.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Title cannot be empty", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Todo newTodo = new Todo();
+        newTodo.setTitle(title);
+        newTodo.setDescription(description);
+        newTodo.setCompleted(isCompleted);
+
+        try{
+            todoDao.addTodo(newTodo);
+            JOptionPane.showMessageDialog(this, "Todo added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            tableModel.setRowCount(0);
+            loadTodos();
+            titleField.setText("");
+            descriptionArea.setText("");
+            completedCheckBox.setSelected(false);
+        }catch(SQLException e){
+            JOptionPane.showMessageDialog(this, "Error adding todo: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateTodo(){
+
+    }
+
+    private void deleteTodo(){
+
+    }
+
 
     private void loadTodos(){
         List<Todo> todos;
