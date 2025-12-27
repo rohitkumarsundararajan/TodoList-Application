@@ -11,6 +11,7 @@ import com.todo.model.Todo;
 import java.util.List;
 import java.awt.*;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 public class TodoAppGUI extends JFrame{
     private TodoAppDAO todoDao;
@@ -143,6 +144,33 @@ public class TodoAppGUI extends JFrame{
             (e) -> {
                 deleteTodo();
             });
+
+        filterComboBox.addActionListener(
+            (e) -> {
+                String selectedFilter = (String) filterComboBox.getSelectedItem();
+                tableModel.setRowCount(0);
+                if(selectedFilter.equals("All")){
+                    loadTodos();
+                }else if(selectedFilter.equals("Completed")){
+                    loadFilteredTodos(true);
+                }else{
+                    loadFilteredTodos(false);
+                }
+            });
+
+        todoTable.getSelectionModel().addListSelectionListener(
+            (e) -> {
+                int selectedRow = todoTable.getSelectedRow();
+                if(selectedRow >= 0){
+                    String title = (String) tableModel.getValueAt(selectedRow, 1);
+                    String description = (String) tableModel.getValueAt(selectedRow, 2);
+                    boolean isCompleted = (boolean) tableModel.getValueAt(selectedRow, 3);
+
+                    titleField.setText(title);
+                    descriptionArea.setText(description);
+                    completedCheckBox.setSelected(isCompleted);
+                }
+            });
     }
 
     private void addTodo(){
@@ -174,13 +202,56 @@ public class TodoAppGUI extends JFrame{
     }
 
     private void updateTodo(){
+        Todo updatedTodo = new Todo();
+        int selectedRow = todoTable.getSelectedRow();
+        if(selectedRow < 0){
+            JOptionPane.showMessageDialog(this, "Please select a todo to update", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int tableId = (Integer) tableModel.getValueAt(selectedRow, 0);
+        String tableTitle = (String) tableModel.getValueAt(selectedRow, 1);
+        String tableDescription = (String) tableModel.getValueAt(selectedRow, 2);
+        boolean tableCompleted = (Boolean) tableModel.getValueAt(selectedRow, 3);
+        LocalDateTime tableCreatedAt = (LocalDateTime) tableModel.getValueAt(selectedRow, 4);
+        LocalDateTime tableUpdatedAt = LocalDateTime.now();
 
+        String title = titleField.getText().trim();
+        String description = descriptionArea.getText().trim();
+        boolean isCompleted = completedCheckBox.isSelected();
+
+        if(title.isEmpty()){
+            JOptionPane.showMessageDialog(this, "Title cannot be empty", "Input Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        updatedTodo.setId(tableId);
+        updatedTodo.setTitle(title);
+        updatedTodo.setDescription(description);
+        updatedTodo.setCompleted(isCompleted);
+        updatedTodo.setCreatedAt(tableCreatedAt);
+        updatedTodo.setUpdatedAt(tableUpdatedAt);
+
+        try{
+            todoDao.updateTodo(updatedTodo);
+            JOptionPane.showMessageDialog(this, "Todo updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            tableModel.setRowCount(0);
+            loadTodos();
+            titleField.setText("");
+            descriptionArea.setText("");
+            completedCheckBox.setSelected(false);
+        }catch(SQLException e){
+            JOptionPane.showMessageDialog(this, "Error updating todo: " + e.getMessage(),
+            "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void deleteTodo(){
 
     }
 
+    private void loadFilteredTodos(boolean isCompleted){
+
+    }
 
     private void loadTodos(){
         List<Todo> todos;
