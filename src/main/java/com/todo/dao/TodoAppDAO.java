@@ -13,6 +13,7 @@ import com.todo.util.DatabaseConnection;
 public class TodoAppDAO {
     private static final String GET_TODOS = "SELECT * FROM todos";
     private static final String ADD_TODO = "INSERT INTO todos (title,description,completed,created_At,updated_At) VALUES (?,?,?,?,?)";
+    private static final String UPDATE_TODO = "UPDATE todos SET title=?,description=?,completed=?,updated_At=? WHERE id=?";
 
     public List<Todo> getAllTodos() throws SQLException{
         List<Todo> todos = new ArrayList<>();
@@ -39,31 +40,51 @@ public class TodoAppDAO {
         }
 
     public void addTodo(Todo todo) throws SQLException {
-    try (Connection conn = DatabaseConnection.getDBConnection();
-         PreparedStatement stmt =
-            conn.prepareStatement(ADD_TODO, PreparedStatement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = DatabaseConnection.getDBConnection();
+            PreparedStatement stmt =
+                conn.prepareStatement(ADD_TODO, PreparedStatement.RETURN_GENERATED_KEYS)) {
 
-        stmt.setString(1, todo.getTitle());
-        stmt.setString(2, todo.getDescription());
-        stmt.setBoolean(3, todo.isCompleted());
-        stmt.setObject(4, todo.getCreatedAt());
-        stmt.setObject(5, todo.getUpdatedAt());
+            stmt.setString(1, todo.getTitle());
+            stmt.setString(2, todo.getDescription());
+            stmt.setBoolean(3, todo.isCompleted());
+            stmt.setObject(4, todo.getCreatedAt());
+            stmt.setObject(5, todo.getUpdatedAt());
 
-        int rowsAffected = stmt.executeUpdate();
+            int rowsAffected = stmt.executeUpdate();
 
-        if (rowsAffected == 0) {
-            throw new SQLException("Adding todo failed, no rows affected.");
-        }
+            if (rowsAffected == 0) {
+                throw new SQLException("Adding todo failed, no rows affected.");
+            }
 
-        try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-            if (generatedKeys.next()) {
-                todo.setId(generatedKeys.getInt(1));
-            } else {
-                throw new SQLException("Adding todo failed, no ID obtained.");
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    todo.setId(generatedKeys.getInt(1));
+                } else {
+                    throw new SQLException("Adding todo failed, no ID obtained.");
+                }
             }
         }
+    }
+    public void updateTodo(Todo todo) throws SQLException {
+        int id = todo.getId();
+        String title = todo.getTitle();
+        String description = todo.getDescription();
+        boolean isCompleted = todo.isCompleted();
+        try (Connection conn = DatabaseConnection.getDBConnection();
+            PreparedStatement stmt = conn.prepareStatement(UPDATE_TODO)) {
+
+            stmt.setString(1, title);
+            stmt.setString(2, description);
+            stmt.setBoolean(3, isCompleted);
+            stmt.setObject(4, todo.getUpdatedAt());
+            stmt.setInt(5, id);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new SQLException("Updating todo failed, no rows affected.");
+            }
         }
     }
-
 
 }
