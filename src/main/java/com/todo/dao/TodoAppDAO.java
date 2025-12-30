@@ -14,6 +14,8 @@ public class TodoAppDAO {
     private static final String GET_TODOS = "SELECT * FROM todos";
     private static final String ADD_TODO = "INSERT INTO todos (title,description,completed,created_At,updated_At) VALUES (?,?,?,?,?)";
     private static final String UPDATE_TODO = "UPDATE todos SET title=?,description=?,completed=?,updated_At=? WHERE id=?";
+    private static final String DELETE_TODO = "DELETE FROM todos WHERE id=?";
+    private static final String GET_TODOS_BY_COMPLETION_STATUS = "SELECT * FROM todos WHERE completed=?";
 
     public List<Todo> getAllTodos() throws SQLException{
         List<Todo> todos = new ArrayList<>();
@@ -87,4 +89,37 @@ public class TodoAppDAO {
         }
     }
 
+    public void deleteTodo(int id) throws SQLException {
+        try (Connection conn = DatabaseConnection.getDBConnection();
+            PreparedStatement stmt = conn.prepareStatement(DELETE_TODO)) {
+
+            stmt.setInt(1, id);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            if (rowsAffected == 0) {
+                throw new SQLException("Deleting todo failed, no rows affected.");
+            }
+        }
+    }
+
+    public List<Todo> getTodosByCompletionStatus(boolean b) throws SQLException {
+        List<Todo> todos = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getDBConnection();
+            PreparedStatement stmt = conn.prepareStatement(GET_TODOS_BY_COMPLETION_STATUS)) {
+            stmt.setBoolean(1, b);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Todo todo = new Todo();
+                todo.setId(rs.getInt("id"));
+                todo.setTitle(rs.getString("title"));
+                todo.setDescription(rs.getString("description"));
+                todo.setCompleted(rs.getBoolean("completed"));
+                todo.setCreatedAt(rs.getTimestamp("created_At").toLocalDateTime());
+                todo.setUpdatedAt(rs.getTimestamp("updated_At").toLocalDateTime());
+                todos.add(todo);
+            }
+        }
+        return todos;
+    }
 }
