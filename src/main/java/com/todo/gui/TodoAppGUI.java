@@ -173,6 +173,27 @@ public class TodoAppGUI extends JFrame{
             });
     }
 
+    private void loadFilteredTodos(boolean b) {
+        List<Todo> todos;
+        try{
+           todos = todoDao.getTodosByCompletionStatus(b);
+           for(Todo todo : todos){
+               Object[] rowData = {
+                   todo.getId(),
+                   todo.getTitle(),
+                   todo.getDescription(),
+                   todo.isCompleted(),
+                   todo.getCreatedAt(),
+                   todo.getUpdatedAt(),
+               };
+               tableModel.addRow(rowData);
+           }
+        }catch(SQLException e){
+           JOptionPane.showMessageDialog(this, "Errors fetching todos : " + e.getMessage(),
+              "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void addTodo(){
         String title = titleField.getText().trim();
         String description = descriptionArea.getText().trim();
@@ -246,11 +267,22 @@ public class TodoAppGUI extends JFrame{
     }
 
     private void deleteTodo(){
-
-    }
-
-    private void loadFilteredTodos(boolean isCompleted){
-
+        int selectedRow = todoTable.getSelectedRow();
+        if(selectedRow < 0){
+            JOptionPane.showMessageDialog(this, "Please select a todo to delete", "Selection Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        int tableId = (Integer) tableModel.getValueAt(selectedRow, 0);
+        try{
+            todoDao.deleteTodo(tableId);
+            JOptionPane.showMessageDialog(this, "Todo deleted successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            tableModel.setRowCount(0);
+            loadTodos();
+        }
+        catch(SQLException e){
+            JOptionPane.showMessageDialog(this, "Error deleting todo: " + e.getMessage(),
+            "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadTodos(){
